@@ -87,6 +87,35 @@ regd_users.put("/auth/review/:isbn", authenticateJWT, (req, res) => {
   return res.json({ message: "Review added successfully" });
 });
 
+regd_users.delete('/auth/review/:isbn', (req, res) => {
+    const { isbn } = req.params;
+    const user = req.user; // Assuming authentication is implemented
+
+    // Find the book by ISBN
+    const book = books.find(b => b.isbn === isbn);
+    if (!book) {
+        return res.status(404).json({ message: "Book not found" });
+    }
+
+    // Check if reviews exist for the book
+    if (!book.reviews || book.reviews.length === 0) {
+        return res.status(404).json({ message: "No reviews found for this book" });
+    }
+
+    // Find the review by the logged-in user
+    const reviewIndex = book.reviews.findIndex(r => r.userId === user.id);
+    if (reviewIndex === -1) {
+        return res.status(403).json({ message: "You can only delete your own review" });
+    }
+
+    // Remove the review
+    book.reviews.splice(reviewIndex, 1);
+
+    return res.json({ message: "Review deleted successfully", book });
+});
+
+
+
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
 module.exports.users = users;
